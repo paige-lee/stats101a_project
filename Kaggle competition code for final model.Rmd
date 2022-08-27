@@ -1,0 +1,166 @@
+---
+title: "Kaggle competition code for final model"
+author: "Paige Lee"
+date: "6/14/2021"
+output: html_document
+---
+
+## Loading data and libraries
+```{r}
+nba_train <- read.csv("NBATrain.csv")
+nba_test <- read.csv("NBATestNoY.csv")
+nba_train_continents <- read.csv("nba_train_continents.csv")
+nba_test_continents <- read.csv("nba_test_continents.csv")
+library(car)
+library(ggplot2)
+```
+
+nba_train is the original training dataset.
+nba_train_continents is a copy of the original training dataset to which I added the new variables that I created.
+
+## Code for new variables created
+
+### Code for T.Div_levels
+```{r}
+nba_train_continents$T.Div_levels <- ifelse((nba_train_continents$T.Div == "SE" | nba_train_continents$T.Div == "SW"), "South", "Not south")
+
+nba_test_continents$T.Div_levels <- ifelse((nba_test_continents$T.Div == "SE" | nba_test_continents$T.Div == "SW"), "South", "Not south")
+```
+
+### Code for Pos_levels
+```{r}
+nba_train_continents$Pos_levels <- ifelse((nba_train_continents$Pos == "PG-SG" | nba_train_continents$Pos == "SF-SG" | nba_train_continents$Pos == "SG" | nba_train_continents$Pos == "PG" | nba_train_continents$Pos == "SF"), "PG, SG, SF, and hybrids", ifelse(nba_train_continents$Pos == "C", "C", "PF"))
+
+nba_test_continents$Pos_levels <- ifelse((nba_test_continents$Pos == "PG-SG" | nba_test_continents$Pos == "SF-SG" | nba_test_continents$Pos == "SG" | nba_test_continents$Pos == "PG" | nba_test_continents$Pos == "SF"), "PG, SG, SF, and hybrids", ifelse(nba_test_continents$Pos == "C", "C", "PF"))
+```
+
+### Code for OBPM_levels
+```{r}
+nba_train_continents$OBPM_levels <- ifelse(nba_train_continents$OBPM < 0, "Bench player", ifelse(nba_train_continents$OBPM < 4, "Decent", "Great"))
+
+nba_test_continents$OBPM_levels <- ifelse(nba_test_continents$OBPM < 0, "Bench player", ifelse(nba_test_continents$OBPM < 4, "Decent", "Great"))
+```
+
+### Code for FTA_levels
+```{r}
+nba_train_continents$FTA_levels <- ifelse(nba_train_continents$FTA < 9.8, "Lower", "Higher")
+
+nba_test_continents$FTA_levels <- ifelse(nba_test_continents$FTA < 9.8, "Lower", "Higher")
+```
+
+### Code for BPM_levels
+```{r}
+nba_train_continents$BPM_levels <- ifelse(nba_train_continents$BPM < -8.4, "Bench player", ifelse(nba_train_continents$BPM < 1, "Decent", "Great"))
+
+nba_test_continents$BPM_levels <- ifelse(nba_test_continents$BPM < -8.4, "Bench player", ifelse(nba_test_continents$BPM < 1, "Decent", "Great"))
+```
+
+### Code for DBPM_levels
+```{r}
+nba_train_continents$DBPM_levels <- ifelse(nba_train_continents$DBPM < -1.5, "Bench player", ifelse(nba_train_continents$DBPM < 4, "Decent", "Great"))
+
+nba_test_continents$DBPM_levels <- ifelse(nba_test_continents$DBPM < -1.5, "Bench player", ifelse(nba_test_continents$DBPM < 4, "Decent", "Great"))
+```
+
+### Code for X2P_levels
+```{r}
+nba_train_continents$X2P_levels <- ifelse(nba_train_continents$X2P < 1.1, "Lower", ifelse(nba_train_continents$X2P < 10.7, "Medium", "Higher"))
+
+nba_test_continents$X2P_levels <- ifelse(nba_test_continents$X2P < 1.1, "Lower", ifelse(nba_test_continents$X2P < 10.7, "Medium", "Higher"))
+```
+
+### Code for WS_levels
+```{r}
+nba_train_continents$WS_levels <- ifelse(nba_train_continents$WS < 0, "Lower", ifelse(nba_train_continents$WS < 6.9, "Medium", "Higher"))
+
+nba_test_continents$WS_levels <- ifelse(nba_test_continents$WS < 0, "Lower", ifelse(nba_test_continents$WS < 6.9, "Medium", "Higher"))
+```
+
+### Code for PTS_levels
+```{r}
+nba_train_continents$PTS_levels <- ifelse(nba_train_continents$PTS < 31.4, "Lower", "Higher")
+
+nba_test_continents$PTS_levels <- ifelse(nba_test_continents$PTS < 31.4, "Lower", "Higher")
+```
+
+### Code for ORB_levels
+```{r}
+nba_train_continents$ORB_levels <- ifelse(nba_train_continents$ORB < 1.8, "Lower", "Higher")
+
+nba_test_continents$ORB_levels <- ifelse(nba_test_continents$ORB < 1.8, "Lower", "Higher")
+```
+
+### Code for NRtg.A_levels
+```{r}
+nba_train_continents$NRtg.A_levels <- ifelse(nba_train_continents$NRtg.A < -5.31, "Lower", "Higher")
+
+nba_test_continents$NRtg.A_levels <- ifelse(nba_test_continents$NRtg.A < -5.31, "Lower", "Higher")
+```
+
+### Code for Ortg_levels
+```{r}
+nba_train_continents$Ortg_levels <- ifelse(nba_train_continents$Ortg < 114, "Lower", "Higher")
+
+nba_test_continents$Ortg_levels <- ifelse(nba_test_continents$Ortg < 114, "Lower", "Higher")
+```
+
+## Final model
+```{r}
+model <- lm(formula = Salary ~ I((OWS + 2.10001)^0.8692047) + I(Age^-0.5062876) + I((DWS + 1e-04)^0.9106252) + I(G^0.8535207) + I(MP^0.3458856) + T.Div_levels + BPM_levels + DBPM_levels + I((VORP + 1.20001)^0.3948992) + OBPM_levels + FTA_levels + I((FT + 1e-04)^0.5155356) + X2P_levels + WS_levels + Pos_levels + FT.:FTA + OWS:VORP + OWS:WS + PTS_levels + ORB_levels + NRtg.A_levels + Ortg_levels, data = nba_train_continents)
+
+summary(model)
+```
+
+## VIF scores for each predictor
+```{r}
+vif(model)
+```
+
+## Leverage plot for each predictor
+```{r}
+leveragePlots(model)
+```
+
+## Diagnostics plots for the model
+```{r}
+library(gridExtra)
+
+diagPlot<-function(model){
+ p1<-ggplot(model, aes(model$fitted, model$residuals),label=rownames(bonds))+geom_point()
+ p1<-p1+stat_smooth(method="loess")+geom_hline(yintercept=0, col="red", linetype="dashed")
+ p1<-p1+xlab("Fitted values")+ylab("Residuals")
+ p1<-p1+ggtitle("Residual vs Fitted Plot")+theme_bw()
+
+ p2<-ggplot(model,aes(sample=rstandard(model))) + stat_qq() + stat_qq_line()
+ p2<-p2+xlab("Theoretical Quantiles")+ylab("Standardized Residuals")
+ p2<-p2+ggtitle("Normal Q-Q")
+
+ p3<-ggplot(model, aes(model$fitted, sqrt(abs(rstandard(model)))))+geom_point(na.rm=TRUE)
+ p3<-p3+stat_smooth(method="loess", na.rm = TRUE)+xlab("Fitted Value")
+ p3<-p3+ylab(expression(sqrt("|Standardized residuals|")))
+ p3<-p3+ggtitle("Scale-Location")+theme_bw()+geom_hline(yintercept=sqrt(2),
+col="red", linetype="dashed")
+
+ p4<-ggplot(model, aes(seq_along(cooks.distance(model)),  cooks.distance(model)))+geom_bar(stat="identity", position="identity")
+ p4<-p4+xlab("Obs. Number")+ylab("Cook's distance")
+ p4<-p4+ggtitle("Cook's distance")+theme_bw()+geom_hline(yintercept=4/(length(model$residuals-2)), col="red", linetype="dashed")
+
+ p5<-ggplot(model, aes(hatvalues(model), rstandard(model)))+geom_point(aes(size=cooks.distance(model)), na.rm=TRUE)
+ p5<-p5+stat_smooth(method="loess", na.rm=TRUE)
+ p5<-p5+xlab("Leverage")+ylab("Standardized Residuals")
+ p5<-p5+ggtitle("Residual vs Leverage Plot")
+ p5<-p5+scale_size_continuous("Cook's Distance", range=c(1,5))
+ p5<-p5+theme_bw()+theme(legend.position="bottom")+geom_hline(yintercept=c(-2,2), col="red", linetype="dashed")+geom_vline(xintercept=4/(length(model$residuals)), col="blue", linetype="dashed")+ylim(-4,4)
+
+ p6<-ggplot(model, aes(hatvalues(model), cooks.distance(model)))+geom_point(na.rm=TRUE)+stat_smooth(method="loess", na.rm=TRUE)
+ p6<-p6+xlab("Leverage hii")+ylab("Cook's Distance")
+ p6<-p6+ggtitle("Cook's dist vs Leverage")
+ p6<-p6+geom_abline(slope=seq(0,3,0.5), color="gray", linetype="dashed")
+ p6<-p6+theme_bw()
+ return(grid.arrange(p1,p2,p3,p4,p5,p6,ncol=3))
+ }
+```
+
+```{r}
+diagPlot(model)
+```
